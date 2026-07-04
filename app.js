@@ -1,6 +1,7 @@
 import express from "express";
 import mysql from "mysql2";
 import "dotenv/config";
+import { error } from "node:console";
 
 const app = express();
 
@@ -55,30 +56,45 @@ app.post("/signup", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-    
-    try {
-        db.execute(
-            "SELECT u_email u_password FROM user where u_email = ? and u_password = ?   ", [req.body.email , req.body.password],
-            (err, results) => {
-                if (err) {
-                    return res.status(500).json({message: "Database error" });
-                }
+  try {
+    db.execute(
+      "SELECT u_email u_password FROM user where u_email = ? and u_password = ?   ",
+      [req.body.email, req.body.password],
+      (err, results) => {
+        if (err) {
+          return res.status(500).json({ message: "Database error" });
+        }
 
-                if (!results.length > 0) {
-                   return res.status(401).json( {message:"email and password mismatch"}); 
-                }
+        if (!results.length > 0) {
+          return res
+            .status(401)
+            .json({ message: "email and password mismatch" });
+        }
 
-                return res.status(200).json({ message: "User logged in successfully" });
-            }
-        )
-        
-    } catch (error) {
-        console.log(error);
-        
-    }
-})
+        return res.status(200).json({ message: "User logged in successfully" });
+      },
+    );
+  } catch (error) {
+    console.log(error);
+  }
+});
 
-
+app.get("/profile/:id", (req, res) => {
+  db.execute(
+    "SELECT * FROM user WHERE u_id =?",
+    [req.params.id],
+    (error, data) => {
+      if (error) {
+        return res.status(500).json({ message: "Database error" });
+      }
+      if (data.length > 0) {
+        return res.status(200).json({ data, message: "User found" });
+      } else {
+        return res.status(404).json({ message: "User not found" });
+      }
+    },
+  );
+});
 
 app.listen(process.env.PORT, () => {
   console.log("Server is running on http://localhost:" + process.env.PORT);
