@@ -54,6 +54,32 @@ app.post("/signup", (req, res) => {
   }
 });
 
+app.post("/login", (req, res) => {
+    
+    try {
+        db.execute(
+            "SELECT u_email u_password FROM user where u_email = ? and u_password = ?   ", [req.body.email , req.body.password],
+            (err, results) => {
+                if (err) {
+                    return res.status(500).json({message: "Database error" });
+                }
+
+                if (!results.length > 0) {
+                   return res.status(401).json( {message:"email and password mismatch"}); 
+                }
+
+                return res.status(200).json({ message: "User logged in successfully" });
+            }
+        )
+        
+    } catch (error) {
+        console.log(error);
+        
+    }
+})
+
+
+
 app.listen(process.env.PORT, () => {
   console.log("Server is running on http://localhost:" + process.env.PORT);
 });
