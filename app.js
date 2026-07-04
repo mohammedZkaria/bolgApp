@@ -112,7 +112,7 @@ app.patch("/profile/:id", (req, res) => {
         if (error) {
           return res.status(500).json({ error  ,  message: "Database error" });
         }
-        if (data) {
+        if (!data.affectedRows) {
           return res.status(200).json({ data, message: "User updated" });
         } else {
           return res.status(404).json({ message: "User not found" });
