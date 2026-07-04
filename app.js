@@ -96,6 +96,32 @@ app.get("/profile/:id", (req, res) => {
   );
 });
 
+app.patch("/profile/:id", (req, res) => {
+  try {
+    db.execute(
+      "UPDATE user SET u_firstName = ?, u_lastName = ?, u_password = ?, u_gender = ?, u_DOB = ? WHERE u_id = ?",
+      [
+        req.body.firstName,
+        req.body.lastName,
+        req.body.password,
+        req.body.gender,
+        req.body.DOB,
+        req.params.id,
+      ],
+      (error, data) => {
+        if (error) {
+          return res.status(500).json({ error  ,  message: "Database error" });
+        }
+        if (data) {
+          return res.status(200).json({ data, message: "User updated" });
+        } else {
+          return res.status(404).json({ message: "User not found" });
+        }
+      },
+    );
+  } catch (error) {}
+});
+
 app.listen(process.env.PORT, () => {
   console.log("Server is running on http://localhost:" + process.env.PORT);
 });
