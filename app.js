@@ -142,71 +142,110 @@ app.delete("/delete-blog/:id", (req, res) => {
   const blogId = req.params.id;
 
   // 1. الكويري الأولى: نـتأكد إن البوست موجود (صلحنا اسم الجدول blog)
-  db.execute(
-    "SELECT * FROM bolg WHERE b_id = ?",
-    [blogId],
-    (err, results) => {
-      if (err) {
-        return res.status(500).json({ message: "Database error" });
-      }
-
-      // صلحنا الشرط: لو الطول بيساوي 0 يعني البوست مش موجود
-      if (results.length === 0) {
-        return res.status(404).json({ message: "Post not found" });
-      }
-
-      // 2. الكويري الثانية: مش هتشتغل إلا لو البوست موجود فعلاً (مكتوبة جوه الأولى)
-      db.execute(
-        "DELETE FROM bolg WHERE b_id = ?",
-        [blogId],
-        (deleteErr, deleteResults) => {
-          if (deleteErr) {
-            return res.status(500).json({ message: "Database error during deletion" });
-          }
-
-          // الرد النهائي بالنجاح بيتبعت هنا بس
-          return res.status(200).json({ message: "Post deleted successfully" });
-        }
-      );
-
+  db.execute("SELECT * FROM bolg WHERE b_id = ?", [blogId], (err, results) => {
+    if (err) {
+      return res.status(500).json({ message: "Database error" });
     }
-  );
+
+    // صلحنا الشرط: لو الطول بيساوي 0 يعني البوست مش موجود
+    if (results.length === 0) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    // 2. الكويري الثانية: مش هتشتغل إلا لو البوست موجود فعلاً (مكتوبة جوه الأولى)
+    db.execute(
+      "DELETE FROM bolg WHERE b_id = ?",
+      [blogId],
+      (deleteErr, deleteResults) => {
+        if (deleteErr) {
+          return res
+            .status(500)
+            .json({ message: "Database error during deletion" });
+        }
+
+        // الرد النهائي بالنجاح بيتبعت هنا بس
+        return res.status(200).json({ message: "Post deleted successfully" });
+      },
+    );
+  });
 });
 
 app.patch("/update-blog/:id", (req, res) => {
   const blogId = req.params.id;
   const { title, content } = req.body;
 
+  db.execute("SELECT * FROM bolg WHERE b_id = ?", [blogId], (err, results) => {
+    if (err) {
+      return res.status(500).json({ message: "Database error" });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    db.execute(
+      "UPDATE bolg SET b_title = ?, b_content = ? WHERE b_id = ?",
+      [title, content, blogId],
+      (error, data) => {
+        if (error) {
+          return res
+            .status(500)
+            .json({ message: "Database error during update" });
+        }
+
+        if (data.affectedRows > 0) {
+          return res.status(200).json({ message: "Post updated successfully" });
+        } else {
+          return res
+            .status(400)
+            .json({ message: "No changes made to the post" });
+        }
+      },
+    );
+  });
+});
+
+app.get("/blog/:id", (req, res) => {
   db.execute(
     "SELECT * FROM bolg WHERE b_id = ?",
-    [blogId],
-    (err, results) => {
-      if (err) {
+    [req.params.id],
+    (error, data) => {
+      if (error) {
         return res.status(500).json({ message: "Database error" });
       }
-
-      if (results.length === 0) {
+      if (data.length > 0) {
+        return res.status(200).json({ data, message: "Post found" });
+      } else {
         return res.status(404).json({ message: "Post not found" });
       }
-
-      db.execute(
-        "UPDATE bolg SET b_title = ?, b_content = ? WHERE b_id = ?",
-        [title, content, blogId],
-        (error, data) => {
-          if (error) {
-            return res.status(500).json({ message: "Database error during update" });
-          }
-
-          if (data.affectedRows > 0) {
-            return res.status(200).json({ message: "Post updated successfully" });
-          } else {
-            return res.status(400).json({ message: "No changes made to the post" });
-          }
-        }
-      );
-
-    }
+    },
   );
+});
+
+app.get("/all-blogs", (req, res) => {
+  const query = `
+SELECT 
+    bolg.b_id,
+    bolg.b_title,
+    bolg.b_content,
+    bolg.b_created_at,
+    CONCAT(u.u_firstName, ' ', u.u_lastName) AS author_name,
+    u.u_email AS author_email,
+    u.u_gender AS author_gender
+FROM bolg 
+INNER JOIN user AS u ON bolg.b_author_id = u.u_id 
+LIMIT 0, 25;
+  `;
+  db.execute(query, (error, data) => {
+    if (error) {
+      return res.status(500).json({ message: "Database error" });
+    }
+    if (data.length > 0) {
+      return res.status(200).json({ data, message: "Posts found" });
+    } else {
+      return res.status(404).json({ message: "Posts not found" });
+    }
+  });
 });
 
 app.listen(process.env.PORT, () => {
