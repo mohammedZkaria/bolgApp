@@ -110,7 +110,7 @@ app.patch("/profile/:id", (req, res) => {
       ],
       (error, data) => {
         if (error) {
-          return res.status(500).json({ error  ,  message: "Database error" });
+          return res.status(500).json({ error, message: "Database error" });
         }
         if (!data.affectedRows) {
           return res.status(200).json({ data, message: "User updated" });
@@ -122,6 +122,21 @@ app.patch("/profile/:id", (req, res) => {
   } catch (error) {}
 });
 
+app.post("/add-blog/:id", (req, res) => {
+  try {
+    db.execute(
+      "INSERT INTO bolg (b_title, b_content, b_author_id) VALUES (?, ?, ?)",
+      [req.body.title, req.body.content, req.params.id],
+
+      (err, results) => {
+        if (err) {
+          return res.status(500).json({ message: "Database error" });
+        }
+        return res.status(201).json({ message: "Post created successfully" });
+      },
+    );
+  } catch (error) {}
+});
 app.listen(process.env.PORT, () => {
   console.log("Server is running on http://localhost:" + process.env.PORT);
 });
