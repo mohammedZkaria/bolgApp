@@ -137,6 +137,42 @@ app.post("/add-blog/:id", (req, res) => {
     );
   } catch (error) {}
 });
+
+app.delete("/delete-blog/:id", (req, res) => {
+  const blogId = req.params.id;
+
+  // 1. الكويري الأولى: نـتأكد إن البوست موجود (صلحنا اسم الجدول blog)
+  db.execute(
+    "SELECT * FROM bolg WHERE b_id = ?",
+    [blogId],
+    (err, results) => {
+      if (err) {
+        return res.status(500).json({ message: "Database error" });
+      }
+
+      // صلحنا الشرط: لو الطول بيساوي 0 يعني البوست مش موجود
+      if (results.length === 0) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+
+      // 2. الكويري الثانية: مش هتشتغل إلا لو البوست موجود فعلاً (مكتوبة جوه الأولى)
+      db.execute(
+        "DELETE FROM bolg WHERE b_id = ?",
+        [blogId],
+        (deleteErr, deleteResults) => {
+          if (deleteErr) {
+            return res.status(500).json({ message: "Database error during deletion" });
+          }
+
+          // الرد النهائي بالنجاح بيتبعت هنا بس
+          return res.status(200).json({ message: "Post deleted successfully" });
+        }
+      );
+
+    }
+  );
+});
+
 app.listen(process.env.PORT, () => {
   console.log("Server is running on http://localhost:" + process.env.PORT);
 });
