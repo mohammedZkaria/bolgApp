@@ -173,6 +173,42 @@ app.delete("/delete-blog/:id", (req, res) => {
   );
 });
 
+app.patch("/update-blog/:id", (req, res) => {
+  const blogId = req.params.id;
+  const { title, content } = req.body;
+
+  db.execute(
+    "SELECT * FROM bolg WHERE b_id = ?",
+    [blogId],
+    (err, results) => {
+      if (err) {
+        return res.status(500).json({ message: "Database error" });
+      }
+
+      if (results.length === 0) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+
+      db.execute(
+        "UPDATE bolg SET b_title = ?, b_content = ? WHERE b_id = ?",
+        [title, content, blogId],
+        (error, data) => {
+          if (error) {
+            return res.status(500).json({ message: "Database error during update" });
+          }
+
+          if (data.affectedRows > 0) {
+            return res.status(200).json({ message: "Post updated successfully" });
+          } else {
+            return res.status(400).json({ message: "No changes made to the post" });
+          }
+        }
+      );
+
+    }
+  );
+});
+
 app.listen(process.env.PORT, () => {
   console.log("Server is running on http://localhost:" + process.env.PORT);
 });
